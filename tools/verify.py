@@ -34,10 +34,40 @@ def chk(cond, msg):
         errs.append(msg)
 
 
-# ---- exactly the four required files at the archive root -------------------
+# ---- the four required files at the archive root (+ optional webui.bz2) -----
+# The official Docker spec needs four top-level files. The App Center review
+# item F22 additionally requires the TOS front-end bundle `webui.bz2` whenever
+# config.ini declares an access path; the official self-test tool accepts it as
+# an extra top-level entry (D20 warning). Nothing else may appear.
+REQUIRED_FILES = {"config.ini", f"{appid}.lang", f"{appid}.svg", "docker-compose.yml"}
 names = sorted(p.name for p in stage.iterdir())
-chk(names == sorted(["config.ini", f"{appid}.lang", f"{appid}.svg", "docker-compose.yml"]),
-    f"archive must contain exactly 4 required files, got {names}")
+chk(REQUIRED_FILES.issubset(set(names)),
+    f"archive must contain the 4 required files {sorted(REQUIRED_FILES)}, got {names}")
+chk(set(names) <= REQUIRED_FILES | {"webui.bz2"},
+    f"archive must contain only the 4 required files plus webui.bz2, got {names}")
+
+# ---- webui.bz2 (F22) ---------------------------------------------------------
+webui = stage / "webui.bz2"
+chk(webui.is_file(), "webui.bz2 front-end bundle is missing (config.ini declares a path; F22)")
+if webui.is_file():
+    chk(webui.stat().st_size <= 64 * 1024,
+        f"webui.bz2 is {webui.stat().st_size} bytes (limit 64 KB for a redirect bundle)")
+    try:
+        import bz2
+        raw = bz2.decompress(webui.read_bytes())
+        import io, tarfile
+        with tarfile.open(fileobj=io.BytesIO(raw), mode="r:") as tf:
+            members = [m.name for m in tf.getmembers()]
+            chk("index.html" in members,
+                f"webui.bz2 must contain index.html at the archive root, got {members}")
+            chk(all("/" not in m for m in members),
+                f"webui.bz2 must keep index.html at the root, got {members}")
+            idx = tf.extractfile("index.html").read().decode("utf-8", "replace") \
+                if "index.html" in members else ""
+        chk("<title>" in idx.lower(), "webui.bz2 index.html must carry a <title>")
+    except Exception as e:  # noqa: BLE001 - any parse failure is a package defect
+        errs.append(f"webui.bz2 is not a bzip2-compressed tar: {e}")
+
 
 # ---- config.ini -------------------------------------------------------------
 raw_cfg = (stage / "config.ini").read_text(encoding="utf-8")
@@ -165,6 +195,29 @@ chk(comp_nc.count("restart: unless-stopped") == services,
 chk(comp_nc.count("healthcheck:") == services, "every service must define a healthcheck")
 chk(len(re.findall(r"^\s+TZ:\s*\S", comp_nc, re.M)) == services,
     "every service must set TZ explicitly")
+
+# ---- start command must not rely on the image entrypoint metadata (F2) ------
+# The 2.32.0-1 review saw a container whose runtime argv[0] was "-p", i.e. the
+# image entrypoint was missing on that architecture and docker exec'd the first
+# option directly. A list-form command therefore has to be self-contained: either
+# an explicit entrypoint pinned to the binary plus option arguments, or the
+# executable itself as command[0] (with the entrypoint cleared).
+cmd_list = re.search(r"^\s+command:\s*\[(.*?)\]\s*$", comp_nc, re.M)
+has_entrypoint = re.search(r"^\s+entrypoint:\s*\[", comp_nc, re.M) is not None
+if cmd_list and not has_entrypoint:
+    first = cmd_list.group(1).split(",")[0].strip().strip("\"'")
+    chk(not first.startswith("-"),
+        f"compose command must not begin with an option ({first!r}) when no "
+        "entrypoint is pinned: the image entrypoint is not guaranteed (F2)")
+    chk(first.startswith("/"),
+        f"compose command must start with the absolute binary ({first!r}) when "
+        "no entrypoint is pinned (F2)")
+if has_entrypoint:
+    ep = re.search(r"^\s+entrypoint:\s*\[(.*?)\]\s*$", comp_nc, re.M)
+    ep_first = ep.group(1).split(",")[0].strip().strip("\"'") if ep else ""
+    chk(ep_first.startswith("/") and not ep_first.endswith("sh"),
+        f"the pinned entrypoint must be the application binary, got {ep_first!r} (F2)")
+
 chk(re.search(r"user:\s*[\"']?(0|root)", comp_nc) is None, "containers must not run as root")
 vols = re.findall(r"^\s*-\s*(/[^:\s]+):(/[^:\s]+)\s*$", comp_nc, re.M)
 app_vols = [(h, c) for h, c in vols]

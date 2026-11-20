@@ -20,52 +20,43 @@
   "auth": "File Browser",
   "upstream_url": "https://github.com/filebrowser/filebrowser",
   "upstream_license": "Apache-2.0",
-  "descript": "File Browser is a lightweight web file manager: browse, upload, edit and share files from any browser, with multiple users and per-folder permissions. This package runs the Docker Hub image as a non-root container and serves everything under the application data folder.",
-  "release_note": "1. First release.",
-  "important": "Open the web UI on port 8128; the default login is admin/admin, change it immediately in Settings. Files live in /Volume1/DockerAppData/filebrowserdocker/data/ and survive restarts and updates. The container runs as uid 1000. Needs DockerEngine; configure a registry mirror if Docker Hub is unreachable. Back up the data folder before uninstalling with data removal. Plain HTTP on the LAN.",
+  "descript": "File Browser is a self-hosted web file manager. Browse, upload, download, rename, move, delete, preview and edit text files from any browser; create share links; manage users with per-folder permissions; search your files. This package runs the official Docker Hub image as a non-root container, with data under /Volume1/DockerAppData/filebrowserdocker/.",
+  "release_note": "2.32.0-2 - rectified the 2.32.0-1 listing review. C3: privacy policy added (PRIVACY.md, reachable from the package help link). C9: descriptions corrected to the delivered feature set (the Chinese variants carried an unrelated app description; the English text no longer overstates features). C10: README completed and repository layout documented. F2: the container entrypoint is pinned to /filebrowser, so the service starts on x86_64 and aarch64 (2.32.0-1 exec'd \"-p\"). F22: webui.bz2 front-end bundle added. F11: uninstall data retention documented. T1: upstream image CVE position documented in the CHANGELOG; moving to the latest upstream image needs a separate packaging migration.",
+  "important": "Open the web UI on port 8128; the first-run login is admin/admin - change it immediately in Settings. Data (your files and filebrowser.db) lives in /Volume1/DockerAppData/filebrowserdocker/data/ and survives restarts and updates. The container runs as uid 1000. Needs DockerEngine; configure a registry mirror if Docker Hub is unreachable. Uninstalling keeps that data directory (platform policy) - delete it yourself to remove all files and accounts. Plain HTTP on the LAN.",
   "probe": {
-    "user_in_image": "nobody",
-    "entrypoint": null,
-    "cmd": [
-      "sh",
-      "start.sh",
-      "prd"
+    "user_in_image": "",
+    "entrypoint": [
+      "/filebrowser"
     ],
+    "cmd": [],
     "exposed_ports": [
-      8080
+      80
     ],
-    "declared_volumes": [],
+    "declared_volumes": [
+      "/srv"
+    ],
     "image_healthcheck": [
       "CMD-SHELL",
-      "python healthcheck.py"
+      "/healthcheck.sh || exit 1"
     ],
-    "digest": "daya0576/beaverhabits@sha256:6cd7e464207369785c88cfd59f99c6cc44ec57f3a8d90c3439908da42271d69f",
     "architecture": "x86_64",
-    "platforms": [],
-    "http_client_in_image": "",
-    "trial_run": {
-      "ok": false,
-      "http_code": "",
-      "state": "exited",
-      "paths": [],
-      "host_port": 18000,
-      "log_tail": "21, in connect\n    await_only(connection),\n    ~~~~~~~~~~^^^^^^^^^^^^\n  File \"/opt/pysetup/.venv/lib/python3.14/site-packages/sqlalchemy/util/_concurrency_py3k.py\", line 132, in await_only\n    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"/opt/pysetup/.venv/lib/python3.14/site-packages/sqlalchemy/util/_concurrency_py3k.py\", line 196, in greenlet_spawn\n    value = await result\n            ^^^^^^^^^^^^\n  File \"/opt/pysetup/.venv/lib/python3.14/site-packages/aiosqlite/core.py\", line 168, in _connect\n    self._connection = await future\n                       ^^^^^^^^^^^^\n  File \"/opt/pysetup/.venv/lib/python3.14/site-packages/aiosqlite/core.py\", line 63, in _connection_worker_thread\n    result = function()\n  File \"/opt/pysetup/.venv/lib/python3.14/site-packages/aiosqlite/core.py\", line 466, in connector\n    return sqlite3.connect(loc, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^\nsqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n[2026-11-10 04:59:36 +0000] [11] [ERROR] Application startup failed. Exiting.\n[2026-11-10 04:59:36 +0000] [11] [INFO] Worker exiting (pid: 11)\n[2026-11-10 04:59:36 +0000] [9] [ERROR] Worker (pid:11) exited with code 3.\n[2026-11-10 04:59:36 +0000] [9] [ERROR] Shutting down: Master\n[2026-11-10 04:59:36 +0000] [9] [ERROR] Reason: Worker failed to boot.",
-      "files_in_mounts": ""
-    },
+    "platforms": [
+      "x86_64",
+      "aarch64"
+    ],
     "docker_hub": {},
     "github": {
-      "owner": "daya0576",
-      "repo": "beaverhabits",
-      "description": "A self-hosted habit tracking app without \"Goals\"",
-      "license": "BSD-3-Clause",
-      "homepage": "https://beaverhabits.com/demo"
+      "owner": "filebrowser",
+      "repo": "filebrowser",
+      "description": "Web File Browser",
+      "license": "Apache-2.0",
+      "homepage": "https://filebrowser.org"
     }
   },
   "healthcheck": [
     "CMD-SHELL",
     "wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1"
   ],
-  "entrypoint_file": "src/entrypoint.sh",
   "platform": "x86_64",
   "user": "1000:1000",
   "publisher": "Moechz",
@@ -73,8 +64,8 @@
   "github_repo": "filebrowser",
   "upstream_version": "2.32.0",
   "release_tag_prefix": "v",
-  "version": "2.32.0-1",
-  "help": "https://github.com/Moechz/filebrowser/issues",
+  "version": "2.32.0-2",
+  "help": "https://github.com/Moechz/filebrowser/blob/main/PRIVACY.md",
   "official": "https://github.com/filebrowser/filebrowser",
   "license": "Apache-2.0",
   "docker_socket": false,
@@ -85,12 +76,14 @@
   ],
   "translations": {
     "zh-cn": {
-      "descript": "习惯打卡与连续天数统计，界面简洁。",
-      "important": "首次使用请打开网页完成初始化。数据保存在 DockerAppData/beaverhabitsdocker，重启和升级不会丢失。容器以 uid 1000 运行，挂载目录需对该用户可读。需要 DockerEngine；Docker Hub 不可达时先配置镜像加速。卸载并删除数据前请备份。局域网内为 HTTP。"
+      "descript": "File Browser 是一款自托管的网页文件管理器：在浏览器里浏览、上传、下载、重命名、移动、删除、预览和编辑文本文件，可创建分享链接、管理多用户与目录权限、搜索文件。本包以非 root 容器运行官方 Docker Hub 镜像，数据保存在 /Volume1/DockerAppData/filebrowserdocker/。",
+      "important": "网页入口为 8128 端口，首次登录账号密码为 admin/admin，请立即在设置中修改。数据（文件与 filebrowser.db）保存在 /Volume1/DockerAppData/filebrowserdocker/data/，重启和升级不会丢失。容器以 uid 1000 运行。需要 DockerEngine；Docker Hub 不可达时先配置镜像加速。卸载后该数据目录按平台策略保留，如需彻底删除请自行删除。局域网内为 HTTP。",
+      "release_note": "2.32.0-2：针对 2.32.0-1 审核意见的整改。C3：新增隐私政策（PRIVACY.md，帮助链接指向该文件）。C9：描述改为与实际功能一致（原中文描述写的是另一个应用）。C10：补全 README 与仓库目录说明。F2：容器启动命令固定使用 /filebrowser，x86_64 与 aarch64 均可启动。F22：补充 webui.bz2 前端包。F11：说明卸载后数据目录的保留策略。T1：上游镜像 CVE 情况已在 CHANGELOG 说明，升级到最新上游镜像需单独的打包迁移。"
     },
     "zh-hk": {
-      "descript": "习惯打卡与连续天数统计，界面简洁。",
-      "important": "首次使用請開啟網頁完成初始化。資料保存在 DockerAppData/beaverhabitsdocker，重新啟動和升級不會遺失。容器以 uid 1000 運行，掛載目錄需對該使用者可讀。需要 DockerEngine；Docker Hub 不可達時先設定鏡像加速。解除安裝並刪除資料前請備份。區域網路內為 HTTP。"
+      "descript": "File Browser 是一款自託管的網頁檔案管理器：在瀏覽器裡瀏覽、上傳、下載、重新命名、移動、刪除、預覽和編輯文字檔案，可建立分享連結、管理多使用者與目錄權限、搜尋檔案。本包以非 root 容器執行官方 Docker Hub 映像，資料保存在 /Volume1/DockerAppData/filebrowserdocker/。",
+      "important": "網頁入口為 8128 埠，首次登入帳號密碼為 admin/admin，請立即在設定中修改。資料（檔案與 filebrowser.db）保存在 /Volume1/DockerAppData/filebrowserdocker/data/，重新啟動和升級不會遺失。容器以 uid 1000 執行。需要 DockerEngine；Docker Hub 不可達時先設定映像加速。解除安裝後該資料目錄依平台原則保留，如需徹底刪除請自行刪除。區域網路內為 HTTP。",
+      "release_note": "2.32.0-2：針對 2.32.0-1 審核意見的整改。C3：新增隱私政策（PRIVACY.md，說明連結指向該檔案）。C9：描述改為與實際功能一致（原中文描述寫的是另一個應用）。C10：補齊 README 與倉庫目錄說明。F2：容器啟動命令固定使用 /filebrowser，x86_64 與 aarch64 均可啟動。F22：補充 webui.bz2 前端包。F11：說明解除安裝後資料目錄的保留原則。T1：上游映像 CVE 情況已在 CHANGELOG 說明，升級到最新上游映像需另外的打包遷移。"
     }
   },
   "host_port": 8128

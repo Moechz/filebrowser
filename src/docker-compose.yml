@@ -27,6 +27,15 @@
 services:
   filebrowserdocker:
     image: filebrowser/filebrowser:v2.32.0
+    # The start command must not rely on the image's own ENTRYPOINT metadata:
+    # the App Center review of 2.32.0-1 saw a container whose runtime argv[0]
+    # was the first *argument* ("-p") - the image entrypoint was missing on
+    # that architecture, so docker exec'd "-p" directly:
+    #   exec: "-p": executable file not found in $PATH  (F2).
+    # Pin the entrypoint to the binary the image ships (/filebrowser) and pass
+    # the flags as its arguments. Do not repeat "/filebrowser" in the command
+    # list: with the entrypoint pinned that would exec the binary twice.
+    entrypoint: ["/filebrowser"]
     command: ["-p", "8080", "-r", "/data", "-d", "/data/filebrowser.db"]
     container_name: filebrowserdocker
     restart: unless-stopped
@@ -40,9 +49,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 20s
 
 # TOS App Center web metadata (must be the last block of the file):
 # web.port is the published host port above, protocol is http.
